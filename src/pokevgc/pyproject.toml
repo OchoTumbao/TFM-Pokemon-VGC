@@ -1,0 +1,17 @@
+[project]
+name = "pokevgc"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pokemon-vgc-engine",
+]
+
+[tool.uv.workspace]
+members = [
+    "pokemon-vgc-engine",
+]
+
+[tool.uv.sources]
+pokemon-vgc-engine = { workspace = true, editable = true }
