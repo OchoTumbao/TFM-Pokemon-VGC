@@ -51,8 +51,8 @@ class StateVectorizer:
         side_condition_size = 4  # reflect, light screen, tailwind, stealth rock
         per_side_size = side_condition_size
         
-        # Per Pokemon in active team
-        pokemon_stat_size = (
+        # Per Pokemon in active team (same for active and own reserves)
+        pokemon_full_size = (
             1 +  # HP (normalized)
             1 +  # Max HP
             (self.n_stats - 1) +  # Stats (ATK, DEF, SPA, SPD, SPE - excludes HP)
@@ -62,17 +62,26 @@ class StateVectorizer:
             1    # Protect status
         )
         
-        active_size = self.n_active * pokemon_stat_size
+        active_size = self.n_active * pokemon_full_size
         
-        # Per Pokemon in reserve
-        reserve_pokemon_size = (
+        # Own team's reserve Pokemon: full information (same as active)
+        own_reserve_size = self.n_reserve * pokemon_full_size
+        
+        # Opponent's reserve Pokemon: limited information (only HP, Max HP, fainted)
+        opponent_reserve_pokemon_size = (
             1 +  # HP (normalized)
             1 +  # Max HP
             1    # Fainted status
         )
-        reserve_size = self.n_reserve * reserve_pokemon_size
+        opponent_reserve_size = self.n_reserve * opponent_reserve_pokemon_size
         
-        self.vector_size = global_size + 2 * (per_side_size + active_size + reserve_size)
+        # Own side: full info for active + full info for reserves
+        own_side_size = per_side_size + active_size + own_reserve_size
+        
+        # Opponent side: full info for active + limited info for reserves
+        opponent_side_size = per_side_size + active_size + opponent_reserve_size
+        
+        self.vector_size = 2 + own_side_size + opponent_side_size  # 2 for global conditions
         return self.vector_size
     
     def get_vector_size(self) -> int:
@@ -161,7 +170,9 @@ class StateVectorizer:
                 # Padding for missing active slots
                 features.extend(self._encode_pokemon(None, visible=visible))
         
-        # Reserve Pokemon
+        # Reserve Pokemon - visibility depends on whether it's our team or opponent's
+        # Own team (visible=True): full information
+        # Opponent (visible=False): limited information
         for i in range(self.n_reserve):
             if i < len(side.team.reserve):
                 features.extend(self._encode_reserve_pokemon(side.team.reserve[i], visible=visible))
@@ -245,28 +256,79 @@ class StateVectorizer:
     
     def _encode_reserve_pokemon(self, pokemon: BattlingPokemon | None, visible: bool = True) -> list[float]:
         """
-        Encode a reserve Pokemon's state (limited information).
+        Encode a reserve Pokemon's state.
         
         Args:
             pokemon: The BattlingPokemon or None for padding
-            visible: Whether we know detailed information
+            visible: Whether we know all details (own team) or limited info (opponent)
+                    For own team (visible=True): encode full information like active Pokemon
+                    For opponent (visible=False): encode only HP, Max HP, fainted status
         """
         features = []
         
         if pokemon is None:
             # Padding vector
-            return [0.0, 0.0, 0.0]
+            if visible:
+                # Full padding for own team reserves
+                padding_size = (
+                    1 +  # HP normalized
+                    1 +  # Max HP
+                    (self.n_stats - 1) +  # Stats
+                    8 +  # Boosts
+                    self.n_status +  # Status
+                    2 * self.n_types +  # Types
+                    1    # Protect
+                )
+            else:
+                # Limited padding for opponent reserves
+                padding_size = 3  # HP, Max HP, Fainted
+            return [0.0] * padding_size
         
-        # Current HP (normalized)
-        max_hp = pokemon.constants.stats[Stat.MAX_HP]
-        current_hp = pokemon.hp
-        features.append(current_hp / max_hp if max_hp > 0 else 0.0)
-        
-        # Max HP
-        features.append(float(max_hp))
-        
-        # Fainted status
-        features.append(1.0 if pokemon.fainted() else 0.0)
+        if visible:
+            # Own team reserves: encode all information like active Pokemon
+            # Current HP (normalized 0-1)
+            max_hp = pokemon.constants.stats[Stat.MAX_HP]
+            current_hp = pokemon.hp
+            features.append(current_hp / max_hp if max_hp > 0 else 0.0)
+            
+            # Max HP
+            features.append(float(max_hp))
+            
+            # Base stats (excluding HP)
+            for stat_idx in [Stat.ATTACK, Stat.DEFENSE, Stat.SPECIAL_ATTACK, 
+                            Stat.SPECIAL_DEFENSE, Stat.SPEED]:
+                features.append(float(pokemon.constants.stats[stat_idx]))
+            
+            # Stat boosts - always exactly 8
+            boosts = pokemon.boosts[1:] if hasattr(pokemon, 'boosts') else []
+            for i in range(8):
+                if i < len(boosts):
+                    features.append(float(boosts[i]))
+                else:
+                    features.append(0.0)
+            
+            # Status condition
+            status_vector = self._encode_status(pokemon.status)
+            features.extend(status_vector)
+            
+            # Types (dual types)
+            type_vector = self._encode_types(pokemon.types)
+            features.extend(type_vector)
+            
+            # Protect status
+            features.append(1.0 if pokemon.protect else 0.0)
+        else:
+            # Opponent reserves: limited information only
+            # Current HP (normalized)
+            max_hp = pokemon.constants.stats[Stat.MAX_HP]
+            current_hp = pokemon.hp
+            features.append(current_hp / max_hp if max_hp > 0 else 0.0)
+            
+            # Max HP
+            features.append(float(max_hp))
+            
+            # Fainted status
+            features.append(1.0 if pokemon.fainted() else 0.0)
         
         return features
     

@@ -1,0 +1,67 @@
+\chapter{Metodología experimental}
+ 
+\section{Representación del estado y del espacio de acciones}
+
+Para poder utilizar las diferentes tecnicas que se van a utilizar en el estudio es necesario poder crear una representación del estado de una partida, así como una representación de las acciones que los agentes podran realizar. Para ello se han creado dos representaciones vectoriales que se corresponden con el estado y las acciones respectivamente. Estas representaciones codifican la información relevante de una partida y de los movimientos que se pueden realizar en cada turno, de tal forma que puedan ser utilizadas por los algoritmos de aprendizaje automático. La idea es poder crear estructuras compartibles entre las diferentes tecnicas que se van a utilizar.
+
+\subsection{Representación vectorial del estado}
+La representación del estado trata de codificar la información de la clase State del framework. un objeto de esta clase es una "fotografia" de una partida en un momento dado para un jugador en concreto. Es decir, contiene toda la información relevante para la partida que un jugador conoce en un momento dado. Para esto codificamos los siguientes elementos:
+\begin{itemize}
+    \item Condiciones Globales de la partida: Efectos del campo que afectan a ambos jugadores. Más concretamente: 
+    \begin{itemize}
+        \item el clima. El cual hemos codificado como un vector one-hot con 5 posiciones, cada una representando un clima diferente (ninguno, lluvia, sol, granizo y tormenta arena). Teniendo cada clima un efecto diferente sobre los pokemons y sus movimientos.
+        \item el terreno. El cual hemos codificado como un vector one-hot con 5 posiciones, cada una representando un terreno diferente (ninguno, eléctrico, psíquico, de hierba y neblinoso). Estos terrenos funcionan de forma similar a los climas, afectando a los pokemons y sus movimientos de diferentes formas.
+        \item La presencia o ausencia de "Espacio raro". Esta es una condicion que afecta a ambos jugadores e invierte el orden de velocidad de los pokemons, es decir, el pokemon más lento ataca antes que el más rápido. Esta condición se codifica como un valor binario (0 o 1).
+    \end{itemize}
+    \item Condiciones especificas a cada jugador: Efectos que afectan a un jugador en concreto. Más concretamente:
+    \begin{itemize}
+        \item La presencia o ausencia del efecto "Reflejo". Este movimiento es un movimiento de estado que aumenta la defensa de los pokemons del jugador que lo utiliza. Esta condición se codifica como un valor binario (0 o 1).
+        \item La presencia o ausencia del efecto "Pantalla de luz". Este movimiento es un movimiento de estado que aumenta la defensa especial de los pokemons del jugador que lo utiliza. Esta condición se codifica como un valor binario (0 o 1).
+        \item La presencia o ausencia del efecto "Viento afín". Este movimiento es un movimiento de estado que aumenta la velocidad de los pokemons del jugador que lo utiliza. Esta condición se codifica como un valor binario (0 o 1).
+        \item La presencia de "Hazards" en el campo del jugador. Los "Hazards" son movimientos que generan peligros en el campo del jugador y producen un efecto negativo cuando un pokemon entra al campo. Esta condición se representa como un valor binario (0 o 1)
+        \item La información sobre los pokemons activos y en reserva del jugador. Esta información puede estar o no completa. Un jugador conoce todos los detalles sobre sus pokemons. Pero solo conoce cierta información sobre los pokemons de su oponente. Esta información se detalla más adelante
+\end{itemize}
+
+\subsubsection{Representación vectorial de un Pokémon concreto}
+La información sobre un pokemon concreto se codifica de la siguiente forma:
+\begin{itemize}
+    \item Valor de HP normalizado. Este valor se obtiene dividiendo el HP actual del pokemon entre su HP máximo. De esta forma se obtiene un valor entre 0 y 1 que representa la cantidad de HP que le queda al pokemon.
+    \item Valor de HP máximo como un valor numérico
+    \item Valor de las estadísticas (ATK, DEF, SPA, SPD, SPE). Estas estadísticas representan la fuerza de ataque, defensa, ataque especial, defensa especial y velocidad del pokemon respectivamente. Esta información esta oculta en el caso de los pokemon del oponente, quedandose a un valor de 0 al no conocerla
+    \item valor de los "boosts" de las estadísticas. Estos valores representan los aumentos o disminuciones temporales de las estadísticas del pokemon debido a movimientos de estado. Esta información si es conocida para ambos jugadores
+    \item Estado del pokemon, representada como un vector one-hot con 7 posiciones, cada una representando un estado diferente (ninguno, quemado, congelado, paralizado, dormido, envenenado y envenenado grave). Esta información es conocida para ambos jugadores
+    \item Tipos del pokemon, como cada pokemon puede tener uno o dos tipos esta representado por dos vectores one-hot con 18 posiciones cada uno, cada posición representando un tipo diferente (normal, fuego, agua, eléctrico, planta, hielo, lucha, veneno, tierra, volador, psíquico, bicho, roca, fantasma, dragón, siniestro, acero y hada). Quedandose todos los valores a 0 del segundo vector en el caso de los pokemons de un solo tipo. Esta información es conocida para ambos jugadores
+    \item si el pokemon tiene el efecto de "Protección" activo. Este es un movimiento de estado que protege al pokemon de los movimientos del oponente durante un turno. Esta condición se codifica como un valor binario (0 o 1) y es conocida para ambos jugadores
+\end{itemize}
+
+\subsection{Representación vectorial de las acciones}
+
+Otro elemento importante sera la representación vectorial de las acciones que un agente puede realizar cada turno. Recordemos que, en el formato tipico de 2 contra 2, cada jugador tiene que elegir una acción para cada uno de sus pokemons activos. Por lo tanto cada turno un jugador tiene que elegir dos acciones. Es decir, entendemos como acción la decision individual de cada pokemon activo. Sea efectuar un movimiento sobre un pokemon concreto del oponente o efectuar un cambio con un pokemon en reserva.
+
+Definimos la representación vectorial de las acciones de la siguiente forma:
+\begin{itemize}
+    \item un valor booleano que indica si la acción es un movimiento o un cambio. Este valor se codifica como un valor binario (0 o 1), siendo 0 para cambios y 1 para movimientos.
+    \item Información relevante sobre el pokemon objetivo del movimiento o del pokemon entrante. Esta información consiste en los puntos de vidas normalizados, los puntos de vida maximos. Los tipos primarios y secundarios y el estado del pokemon. Todo codificado de la misma forma que se ha detallado en la sección anterior. En el caso de los cambios, esta información se refiere al pokemon entrante, mientras que en el caso de los movimientos, esta información se refiere al pokemon objetivo del movimiento.
+    \item En caso de que la acción sea un movimiento la información sobre el movimiento, en caso contrario todo este bloque se queda a 0. Esta información esta codificada como se detalla a continuación
+\end{itemize}
+
+\subsubsection{Representación vectorial de un movimiento}
+
+La información sobre un movimiento se codifica de la siguiente forma:
+\begin{itemize}
+    \item El tipo del movimiento, codificado como un vector one-hot con 18 posiciones
+    \item La potencia base del movimiento normalizada, obtenida dividiendo la potencia base del movimiento entre 250 
+    \item la precisión del movimiento. Un valor entre 0 y 1 que representa la probabilidad de que el movimiento acierte
+    \item Los Puntos de poder restantes del movimiento, normalizados dividiendo los puntos de poder actuales entre los puntos de poder máximos del movimiento. Esta información representa la cantidad de veces que el movimiento puede ser utilizado antes de quedarse sin puntos de poder. Un movimiento sin puntos de poder no puede ser utilizado
+    \item La prioridad del movimiento. Un valor numerico que representa la prioridad del movimiento en el orden de ataque. En caso de que todos los pokemon usen movimientos con el mismo valor de prioridad, el orden de ataque se determina por la velocidad de los pokemons. Sin embargo, un movimiento con una prioridad mayor atacara antes que un movimiento con una prioridad menor, independientemente de la velocidad de los pokemons.
+    \item La categoria del movimiento, codificada como un vector one-hot de 3 posiciones. Cada una representando una categoría diferente (físico, especial y estado). Un movimiento físico utiliza la estadistica de ataque del pokemon para calcular el daño que inflige, mientras que un movimiento especial utiliza la estadistica de ataque especial del pokemon para calcular el daño que inflige. Un movimiento de estado no inflige daño, sino que produce un efecto de estado en el pokemon objetivo o en el pokemon que lo utiliza.
+    \item La probabilidad de que el movimiento produzca un efecto secundario. Un valor entre 0 y 1 que representa la probabilidad de que el movimiento produzca un efecto secundario
+    \item Una cantidad de valores binarios que representan los diferentes efectos secundarios que un movimiento puede producir, estos pueden ser: forzar el cambio del pokemon objetivo, forzar el cambio del pokemon que lo utiliza, ignorar la evasión del pokemon objetivo, dejar al pokemon que lo utiliza con "Protección" durante un turno, si activa o no pantalla de luz, reflejo, viento afín, espacio raro, un clima concretom, un terreno concreto, un hazard concreto, un estado alterado concreto o si deshabilita un movimiento del pokemon objetivo. Cada uno de estos efectos se codifica como un valor binario (0 o 1) dependiendo de si el movimiento produce ese efecto secundario o no.
+    \item 8 valores que representan la cantidad de boost que el movimiento puede producir en cada una de las estadísticas (ATK, DEF, SPA, SPD, SPE) sea del pokemon objetivo o del pokemon que lo utiliza. Estos valores pueden ser positivos o negativos, dependiendo de si el movimiento aumenta o disminuye las estadísticas del pokemon objetivo o del pokemon que lo utiliza.
+    \item un flag que indica si el movimiento modifica los boosts de las estadísticas del pokemon objetivo o del pokemon que lo utiliza. Este valor se codifica como un valor binario (0 o 1), siendo 0 para el pokemon objetivo y 1 para el pokemon que lo utiliza.
+    \item La cantidad de HP normalizada que el movimiento restaura al pokemon que lo utiliza como posible efecto secuntario
+    \item La cantidad de HP normalizada que el movimiento puede restar al pokemon que lo utiliza como posible efecto secundario. Esto se conoce como "Recoil" o retroceso
+    \item El indice del objetivo del movimiento dentro del campo de batallas. En formato 2 vs 2 este es un valor 0 o 1 que representa a que pokemon del oponente va dirigido el movimiento. En formato 1 vs 1 este valor siempre seria 0, ya que solo hay un pokemon objetivo.
+    \item La efectividad del movimiento contra el pokemon objetivo. Este valor se obtiene multiplicando la efectividad del tipo del movimiento contra el tipo primario del pokemon objetivo por la efectividad del tipo del movimiento contra el tipo secundario del pokemon objetivo. Si un movimiento es super efectivo contra un tipo, su efectividad es 2. Si es poco efectivo, su efectividad es 0.5. Si no tiene efecto, su efectividad es 0. En caso de que el pokemon objetivo tenga dos tipos, la efectividad total del movimiento se obtiene multiplicando las efectividades individuales contra cada tipo. Es decir, si un movimiento es super efectivo contra el tipo primario del pokemon objetivo pero poco efectivo contra el tipo secundario, la efectividad total del movimiento seria 1 (2 multiplicado por 0.5). Pero si un movimiento es super efectivo contra ambos tipos del pokemon objetivo, la efectividad total del movimiento seria 4 (2 multiplicado por 2).
+\end{itemize}
+
