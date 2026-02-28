@@ -1,0 +1,17 @@
+# Large tournament configuration
+# Three agents, many battles per matchup
+
+tournament:
+  agents:
+    - "GreedyBattlePolicy"
+    - "RandomBattlePolicy"
+    - "GreedyBattlePolicy"  # Different instance for diversity
+  
+  battles_per_matchup: 5
+  n_active: 2
+  team_size: 4
+  n_moves: 4
+  
+  stats_file: "tournament_stats_large.csv"
+  dataset_file: "tournament_dataset_large.csv"
+  verbose: false

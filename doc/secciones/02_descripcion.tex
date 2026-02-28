@@ -1,2 +1,66 @@
 \chapter{Descripción del problema}
 
+Como se ha mencionado antes el problema que se aborda en este trabajo es el del desarrollo de agentes inteligentes que puedan tomar decisiones y jugar batallas de Pokémon. En este capitulo vamos a describir en profundidad el problema, en que consiste un combate Pokémon, cuales son las reglas del juego. Para ceñirnos a lo relevante para el trabajo vamos a centrarnos a la simplificación que implementa el framework con el que vamos a trabajar.
+
+\section{Batallas Pokémon}
+
+Una batalla Pokémon consiste en un enfrentamiento entre dos equipos de criaturas controlados cada uno por un jugador. El jugador que gana es aquel que consigue debilitar todas las criaturas del oponente. Antes de discutir los diferentes formatos de batalla es vital entender que es un Pokémon y como es el flujo de un turno en una batalla
+\subsection{Los Pokémon}
+Un Pokémon es una criatura que participa en una batalla Pokémon. A efectos de nuestro trabajo, los Pokémon son entidades que tienen un conjunto de atributos y características que determinan su comportamiento en batalla. Estos atributos y caracteristicas son extremadamente personalizables. De forma que dos criaturas de la misma especie aunque se construyen mediante la misma plantilla pueden presentar diferencias significativas entre ellas.
+
+\subsubsection{Una especie Pokémon}
+Una especie es la plantilla sobre la que se construyen un Pokémon individual de una especie concreta. Esta esta definida por:
+\begin{itemize}
+    \item Uno o dos tipos elementales. Estos tipos sirven para modificar como se relaciona la especie con otros movimientos y ataques. Cada tipo tiene una relación de ventaja, desventaja o neutralidad con respecto a otros tipos. El ejemplo clásico para entender esto es el triangulo de tipos entre agua, fuego y planta, donde el agua es fuerte contra el fuego, el fuego es fuerte contra la planta y la planta es fuerte contra el agua. PONER FOTO DE LA TABLA DE TIPOS AQUÍ
+    \item Un conjunto de movimientos que puede aprender. Un movimiento se define por:
+    
+    \begin{itemize}
+        \item Un nombre que lo identifica
+        \item Un tipo de movimiento, este puede ser de ataque si el movimiento inflinge daño directamente al objetivo, o de estado si el movimiento no inflinge daño pero tiene efectos secundarios.
+        \item  Un tipo elemental de forma que la cantidad de daño que inflinge el movimiento depende de la relación entre el tipo del movimiento y el tipo del Pokémon sobre el que se utiliza
+        \item Un valor de precisión, que determina la probabilidad de que el movimiento acierte al objetivo.
+        \item Un valor de potencia, que determina el daño que inflige al rival. En caso de los movimientos de estado este valor es 0 porque no infligen daño directamente.
+        \item Un posible efecto secundario, como aumentar o disminuir una estadística de algun pokemon participante en la pelea. Un movimiento de estado siempre tiene un efecto secundario pero un movimiento de ataque puede tenerlo o no.
+        \item Una probabilidad de aplicar dicho efecto. En caso de un movimiento de estado este valor es 100\% porque siempre se aplica el efecto. Mientras que en el caso de un movimiento de ataque este valor puede variar.
+        \item Una cantidad de "Puntos de poder" o cantidad de veces que se puede utilizar durante un combate.
+        \item Un valor de prioridad. Normalmente para calcular que criatura actua primero se utiliza el valor de velocidad de la criatura. Pero existen movimientos con un valor de prioridad que pueden modificar este orden. Este valor puede ser positivo, negativo o cero. Un valor positivo implica que el movimiento se ejecuta antes que el rival aunque este último tenga un valor de velocidad mayor. Un valor de prioridad negativo implica que el movimiento se ejecuta después que el rival. Y un valor de prioridad cero implica que se ejecuta en el orden normal segun la velocidad de las criaturas.
+        \item Si el movimiento es uno de ataque este puede ser "físico" o "especial". Un movimiento físico utiliza el ataque del Pokémon que lo usa y la defensa del Pokémon objetivo para calcular el daño, mientras que un movimiento especial utiliza el ataque especial y la defensa especial respectivamente.
+    \end{itemize}
+    \item Un conjunto de estadísticas base que describen las capacidades del Pokémon en combate. Estas son
+    \begin{itemize}
+        \item Puntos de salud. Representa la cantidad de daño que debe recibir el Pokémon para poder ser derrotado
+        \item Ataque. Es un valor que se utiliza para calcular el daño que inflingiria un movimiento fisico
+        \item Defensa. Es un valor que se utiliza para calcular el daño que recibiria el pokémon en caso de ser atacado con un movimiento fisico
+        \item Ataque especial. Es un valor que se utiliza para calcular el daño que inflingiria un movimiento especial
+        \item Defensa Especial. Es un valor que se utiliza para calcular el daño que recibiria el pokémon en caso de ser atacado con un movimiento especial
+        \item Velocidad. Es un valor que se utiliza para calcular el orden en el que actua el pokémon con respecto a su rival en un mismo turno. Tipicamente el pokémon con mayor valor de velocidad ejecuta su acción antes que el de menor velocidad
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Un individuo de una especie}
+Dentro de cada especie dos individuos pueden ser diferentes entre si, puesto que aunque se construyen desde la misma base poseen unos valores mátematicos que los diferencian, estos son
+\begin{itemize}
+    \item Un nivel, un valor del 1 al 100 este valor se utiliza para calcular el valor concreto de las estadisticas del Pokemon partiendo de las estadisticas base. De forma que hay una progresión, a más alto el nivel más altas las caracteristicas del Pokemon concreto
+    \item La lista de movimientos aprendidos. Un subconjunto de la lista de movimientos que el pokemon puede aprender. Estos son los movimientos que el Pokemon conoce y puede usar en una batalla. Este subconjunto tiene un tamaño tipico de 4 elementos, aunque el framework permite alterarlo y jugar con las reglas
+    \item Los Individual values o IVs, una lista de 6 valores dentro del intervalo $[0,31]$ que representan "la genetica" del individuo y como de naturalmente bueno es en cada una de sus estadisticas. Independientemente de lo que su especie dicta de sus estadisticas base. Por ejemplo, a nivel 100 un pokemon con un IV de 31 en velocidad tendra 31 puntos más en velocidad que otro pokemon de su misma especie con un valor 0 de IV en velocidad. Por esto en competitivo se suele buscar "Pokémon perfectos" o con un valor de 31 en todos sus IVs
+    \item Los Effort Values o EVs, son una lista tambien de 6 valores dentro del intervalo $[0,252]$ esta lista trata de reflejar el "entrenamiento" del individuo o en lo que se ha especializado mientras ha ido creciendo. De forma que a nivel 100 un pokemon tendra un bono a una estadistica igual a la cantidad de Evs de esa estadistica entre 4. Estos valores funcionan de forma diferente a los IVs, no es posible maximizar los EVs en todas las caracteristicas, si no que en su lugar la suma total de los EVs en todas las caracteristicas de un individuo no puede superar un valor de 510
+    \item La naturaleza. Esto trata de describir el caracter del individuo. Es un valor dentro de una lista de posibles naturalezas que ofrece un bono sobre una estadistica a cambio de recibir una penalización sobre otra. Por ejemplo un pokemon con una naturaleza "Miedosa" tiene un bono en velocidad pero un negativo en Ataque fisico. Tambien existen naturalezas neutras que no ofrecen ningun bono con la ventaja de no tener ningun negativo
+    
+\end{itemize}
+
+\subsection{Desarrollo de una batalla}
+A nivel más basico una batalla Pokémon funciona de la siguiente manera. Cada jugador parte de un equipo Pokémon de un numeor de individuos determinado por las reglas del formato de batalla. Al inicio de la batalla cada jugador elegira a uno o varios de sus Pokémon siendo esto determinado nuevamente por las reglas del formato. Estos Pokémon iniciales son los que comenzaran la batalla. La cual se desarrollara por turnos que funcionaran de la siguiente manera: 
+
+\begin{itemize}
+    \item Cada jugador elige una acción para cada uno de sus Pokémon activos. Esta acción puede ser usar un movimiento o cambiar a otro Pokémon de su equipo que no esté activo en ese momento.
+    \item Una vez ambos jugadores han elegido sus acciones estas se resuelven en un orden determinado. El cual viene dado por diferentes factores como la velocidad de los Pokémon o la prioridad de los movimientos elegidos.
+    \item Se aplican los efectos de las acciones elegidas. Esto implica que si un Pokémon que fuera a actuar este turno fuera debilitado o no pudiera actuar por alguna consecuencia de las acciones de un Pokémon que actuara antes, su acción no se llevaria a cabo.
+    \item Se comprueba si algun Pokémon ha sido debilitado y si es así el entrenador debera sustituirlo por otro Pokémon de su equipo que no esté debilitado.
+    \item Se repite el proceso hasta que uno de los jugadores no tenga más Pokémon o el tiempo de batalla determinado por las reglas del formato se acabe. Se declarara ganador al jugador que tenga más Pokémon no debilitados o en caso de empate se declararia un empate.
+\end{itemize}
+
+\subsection{El formato de batalla de la VGC AI competition 2025}
+
+Por ceñirnos a lo relevante del trabajo vamos a centrarnos en el formato de batalla que se usó en la VGC AI competition de 2025. Este formato es un formato de batalla doble. Donde cada jugador elige 4 Pokémon de un equipo de 6 para participar en una batalla con 2 Pokémon activos por jugador. Esto implica que cada batalla tiene dos fases definidas. Una fase de seleccion donde conociendo tus 6 Pokémon y las especies de los 6 Pokémon del rival debes elegir los 4 Pokémon con los que vas a jugar la batalla. Y una fase de batalla donde conociendo los 4 Pokémon tuyos y los 4 del rival debes jugar la batalla eligiendo las acciones de tus 2 Pokémon activos en cada turno.
+
+

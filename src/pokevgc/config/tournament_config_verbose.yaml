@@ -1,0 +1,15 @@
+# Detailed tournament with verbose output
+
+tournament:
+  agents:
+    - "GreedyBattlePolicy"
+    - "RandomBattlePolicy"
+  
+  battles_per_matchup: 2
+  n_active: 2
+  team_size: 4
+  n_moves: 4
+  
+  stats_file: "tournament_stats_verbose.csv"
+  dataset_file: "tournament_dataset_verbose.csv"
+  verbose: true

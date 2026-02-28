@@ -309,3 +309,12 @@ typings/
 # emacs
 *~
 
+# MacOS
+.DS_Store
+*/.DS_Store
+
+# Papers
+
+Papers
+
+src/pokevgc/data
