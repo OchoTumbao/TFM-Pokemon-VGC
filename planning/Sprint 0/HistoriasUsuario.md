@@ -8,9 +8,9 @@ Objetivo: poder experimentar sin fricción y con resultados reproducibles.
 **Para** evaluar agentes de forma sistemática  
 
 **Criterios de aceptación**
-- [ ] Lanzar N partidas sin interacción manual
-- [ ] Selección de agentes por configuración
-- [ ] Las partidas terminan sin errores
+- [x] Lanzar N partidas sin interacción manual
+- [x] Selección de agentes por configuración
+- [x] Las partidas terminan sin errores
 
 ---
 
@@ -20,10 +20,10 @@ Objetivo: poder experimentar sin fricción y con resultados reproducibles.
 **Para** generar datasets y analizar decisiones  
 
 **Criterios de aceptación**
-- [ ] Cada turno guarda estado serializado
-- [ ] Cada turno guarda la acción elegida
-- [ ] Cada partida guarda ganador y duración
-- [ ] Logs exportables (JSON / CSV)
+- [x] Cada turno guarda estado serializado
+- [x] Cada turno guarda la acción elegida
+- [x] Cada partida guarda ganador y duración
+- [x] Logs exportables (JSON / CSV)
 
 ---
 
@@ -33,6 +33,6 @@ Objetivo: poder experimentar sin fricción y con resultados reproducibles.
 **Para** reutilizarla en todos los agentes  
 
 **Criterios de aceptación**
-- [ ] Incluye HP, tipos, boosts y estado de campo
-- [ ] Convertible a vector numérico
+- [x] Incluye HP, tipos, boosts y estado de campo
+- [x] Convertible a vector numérico
 - [ ] Documentación clara de features
