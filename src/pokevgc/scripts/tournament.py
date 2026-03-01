@@ -50,6 +50,8 @@ class TournamentConfig:
     stats_file: str = "tournament_stats.csv"
     dataset_file: str = "tournament_dataset.csv"
     verbose: bool = False
+    seed: int = 42  # Fixed seed for reproducibility
+    log_actions: bool = False  # Optional: log individual actions
 
 
 def load_config(config_file: str) -> TournamentConfig:
@@ -66,7 +68,9 @@ def load_config(config_file: str) -> TournamentConfig:
         n_moves=tournament.get("n_moves", 4),
         stats_file=tournament.get("stats_file", "tournament_stats.csv"),
         dataset_file=tournament.get("dataset_file", "tournament_dataset.csv"),
-        verbose=tournament.get("verbose", False)
+        verbose=tournament.get("verbose", False),
+        seed=tournament.get("seed", 42),
+        log_actions=tournament.get("log_actions", False)
     )
 
 
@@ -111,10 +115,15 @@ def run_tournament(config: TournamentConfig) -> Dict:
     if not config.agents:
         raise ValueError("No agents configured")
     
+    # Set seed for reproducibility
+    np.random.seed(config.seed)
+    
     print(f"=== Pokemon VGC Tournament ===")
     print(f"Agents: {', '.join(config.agents)}")
     print(f"Battles per matchup: {config.battles_per_matchup}")
     print(f"Total matchups: {len(config.agents) * (len(config.agents) - 1) // 2}")
+    print(f"Seed: {config.seed}")
+    print(f"Action logging: {'enabled' if config.log_actions else 'disabled'}")
     print()
     
     # Initialize win tracking
@@ -167,8 +176,12 @@ def run_tournament(config: TournamentConfig) -> Dict:
                 # Track turns - count the number of turns based on logged data
                 # Each turn has 2 entries (one per player), so divide by 2
                 num_turns = len(logged_data) // 2 if logged_data else 0
+                
+                # Only aggregate action logs if configured
+                if config.log_actions:
+                    all_logged_data.extend(logged_data)
+                
                 turn_counts.append(num_turns)
-                all_logged_data.extend(logged_data)
                 
                 # Determine winner name
                 if winner_idx == 0:
@@ -197,14 +210,16 @@ def run_tournament(config: TournamentConfig) -> Dict:
     # Save stats to CSV
     save_stats(stats_rows, config.stats_file)
     
-    # Save dataset to CSV
-    save_dataset(all_logged_data, config.dataset_file)
+    # Save dataset to CSV only if action logging is enabled
+    if config.log_actions:
+        save_dataset(all_logged_data, config.dataset_file)
     
     # Print summary
     print("\n=== Tournament Summary ===")
     print(f"Total battles: {battle_count}")
     print(f"Average turns per battle: {sum(turn_counts) / len(turn_counts):.1f}")
-    print(f"Total dataset entries: {len(all_logged_data)}")
+    if config.log_actions:
+        print(f"Total dataset entries: {len(all_logged_data)}")
     print(f"\nAgent Rankings:")
     
     sorted_agents = sorted(win_counts.items(), key=lambda x: x[1], reverse=True)
@@ -212,7 +227,8 @@ def run_tournament(config: TournamentConfig) -> Dict:
         print(f"  {rank}. {agent_name}: {wins} wins")
     
     print(f"\nStats saved to: {config.stats_file}")
-    print(f"Dataset saved to: {config.dataset_file}")
+    if config.log_actions:
+        print(f"Dataset saved to: {config.dataset_file}")
     
     return {
         'total_battles': battle_count,
