@@ -13,3 +13,9 @@ tournament:
   stats_file: "tournament_stats_verbose.csv"
   dataset_file: "tournament_dataset_verbose.csv"
   verbose: true
+  
+  # Fixed seed for reproducible tournaments (default: 42)
+  seed: 42
+  
+  # Enable action logging to dataset CSV (default: false)
+  log_actions: false

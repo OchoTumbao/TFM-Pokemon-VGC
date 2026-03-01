@@ -13,7 +13,7 @@ durante la implementación.
 - [x] Clonar y ejecutar `pokemon-vgc-engine`
 - [x] Entender flujo de una partida (init → turnos → fin)
 - [x] Identificar puntos de extensión para agentes
-- [x] Definir estructura del proyecto (`agents/`, `eval/`, `utils/`)
+- [ ] Definir estructura del proyecto (`agents/`, `eval/`, `utils/`)
 - [x] Configurar entorno virtual / dependencias
 - [x] Fijar versión de Python y librerías
 
@@ -21,26 +21,26 @@ durante la implementación.
 
 ## 🧠 Representación del estado
 
-- [x] Decidir granularidad del estado (completo vs reducido)
-- [x] Identificar variables observables:
+- [ ] Decidir granularidad del estado (completo vs reducido)
+- [ ] Identificar variables observables:
   - HP propios y rivales
   - tipos
   - boosts
   - estados alterados
   - clima / terreno
-- [x] Codificar variables categóricas
-- [x] Normalizar valores numéricos
+- [ ] Codificar variables categóricas
+- [ ] Normalizar valores numéricos
 - [ ] Documentar features del estado
-- [x] Implementar función `state_to_vector()`
+- [ ] Implementar función `state_to_vector()`
 
 ---
 
 ## 🧾 Logging y datasets
 
-- [x] Definir formato de log (JSON / CSV)
-- [x] Guardar estado por turno
-- [x] Guardar acción seleccionada
-- [x] Guardar resultado final
+- [ ] Definir formato de log (JSON / CSV)
+- [ ] Guardar estado por turno
+- [ ] Guardar acción seleccionada
+- [ ] Guardar resultado final
 - [ ] Incluir seed de la partida
 - [ ] Implementar compresión / batching de logs
 - [ ] Script de limpieza y validación de logs
