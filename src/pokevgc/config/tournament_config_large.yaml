@@ -12,12 +12,6 @@ tournament:
   team_size: 4
   n_moves: 4
   
-  stats_file: "data/tournament_stats_large.csv"
-  dataset_file: "data/tournament_dataset_large.csv"
+  stats_file: "tournament_stats_large.csv"
+  dataset_file: "tournament_dataset_large.csv"
   verbose: false
-  
-  # Fixed seed for reproducible tournaments (default: 42)
-  seed: 42
-  
-  # Enable action logging to dataset CSV (default: false)
-  log_actions: true
